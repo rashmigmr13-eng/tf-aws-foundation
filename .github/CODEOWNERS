@@ -1,0 +1,4 @@
+# Changes to prod config and state/backends need an owner's review
+/envs/prod.tfvars      @YOUR-GITHUB-USER
+/bootstrap/            @YOUR-GITHUB-USER
+/.github/workflows/    @YOUR-GITHUB-USER

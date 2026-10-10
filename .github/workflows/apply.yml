@@ -1,0 +1,18 @@
+name: apply
+# dev -> stage are applied on merge. PROD IS PLAN-ONLY in this repo (free-tier budget):
+# the plan + infracost on every PR still prove the prod config is valid and priced.
+on:
+  push: { branches: [main], paths: ["stack/**", "modules/**", "envs/**"] }
+permissions: { id-token: write, contents: read }
+concurrency: { group: apply, cancel-in-progress: false }
+
+jobs:
+  dev:
+    uses: ./.github/workflows/_apply-env.yml
+    with: { env: dev }
+    secrets: inherit
+  stage:
+    needs: dev
+    uses: ./.github/workflows/_apply-env.yml
+    with: { env: stage }
+    secrets: inherit

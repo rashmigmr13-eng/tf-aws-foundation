@@ -1,0 +1,41 @@
+name: plan
+on:
+  pull_request:
+    paths: ["stack/**", "modules/**", "envs/**"]
+permissions: { id-token: write, contents: read, pull-requests: write }
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - uses: terraform-linters/setup-tflint@v4
+      - run: tflint --init && tflint --recursive
+      - uses: bridgecrewio/checkov-action@v12
+        with: { config_file: .checkov.yaml }
+
+  plan:
+    needs: static
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: { env: [dev, stage, prod] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_wrapper: false }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-arn: ${{ secrets.AWS_PLAN_ROLE_ARN }} # read-only OIDC role
+          aws-region: ap-south-1
+      - run: terraform -chdir=stack init -backend-config=../envs/${{ matrix.env }}.backend.hcl
+      - run: terraform -chdir=stack plan -var-file=../envs/${{ matrix.env }}.tfvars -lock-timeout=60s
+      - uses: infracost/actions/setup@v3
+        with: { api-key: "${{ secrets.INFRACOST_API_KEY }}" }
+      - run: |
+          infracost breakdown --path stack --terraform-var-file ../envs/${{ matrix.env }}.tfvars --format json --out-file cost.json
+          infracost comment github --path cost.json --repo $GITHUB_REPOSITORY \
+            --github-token ${{ github.token }} --pull-request ${{ github.event.pull_request.number }} \
+            --behavior update --tag ${{ matrix.env }}

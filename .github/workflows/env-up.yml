@@ -1,0 +1,11 @@
+name: env-up
+on:
+  workflow_dispatch:
+    inputs:
+      env: { description: "Environment to bring up", type: choice, options: [dev, stage, prod-lite] }
+permissions: { id-token: write, contents: read }
+jobs:
+  up:
+    uses: ./.github/workflows/_apply-env.yml
+    with: { env: "${{ inputs.env }}" }
+    secrets: inherit

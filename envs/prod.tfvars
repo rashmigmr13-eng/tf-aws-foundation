@@ -1,0 +1,21 @@
+region                   = "ap-south-1"
+environment              = "prod"
+vpc_cidr                 = "10.30.0.0/16"
+az_count                 = 3
+single_nat_gateway       = false # NAT per AZ = no single point of failure
+instance_types           = ["m6i.large", "m6a.large", "m5.large"]
+asg_min                  = 3 # one per AZ
+asg_max                  = 12
+asg_desired              = 3
+on_demand_base           = 3  # baseline always On-Demand
+on_demand_pct_above_base = 30 # burst is 70% Spot
+db_instance_class        = "db.r6g.large"
+db_multi_az              = true
+db_backup_days           = 14
+protect                  = true
+# certificate_arn = "arn:aws:acm:..."
+# route53_zone_id = "Z123..."
+# domain_name     = "app.example.com"
+enable_nat = true
+alert_email = "you@example.com" # CHANGE ME
+monthly_budget_usd = 50
